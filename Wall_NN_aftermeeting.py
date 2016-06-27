@@ -17,7 +17,7 @@ Ansfiles.sort()
 
 ## read input image
 #Testfiles = os.listdir('160412122017_def/RT')
-#Testfiles.sort()
+#Testfiles.sort() 
 
 
 #####################################################net
