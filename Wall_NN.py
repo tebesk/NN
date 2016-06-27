@@ -104,7 +104,7 @@ with tf.name_scope("difference") as scope:
 with tf.name_scope("train") as scope:
 	train_step = tf.train.GradientDescentOptimizer(0.5).minimize(difference)
 #correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
-#accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32)): meanは値が微妙なので却下.誤差を308*308で割ってる？
+#accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32)): meanは値が微妙なので却下.誤差を512*600で割ってる？
 
 
 
