@@ -33,11 +33,11 @@ def bias_variable(shape):
 
 # 第一層畳み込み層の作成
 def conv2d(x, W):
-  return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
+  return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')# 真ん中2つが縦横のストライド
 
 # X2プーリング層の作成
 def max_pool_2x2(x):
-  return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+  return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')# 真ん中2つが縦横のストライド
 
 # X4プーリング層の作成
 def max_pool_4x4(x):
@@ -54,21 +54,27 @@ y_ = tf.placeholder(tf.float32, shape=[None, 512*600], name = "And")
 
 sess= tf.InteractiveSession()
 
-#1st layer
+### 1層目 畳み込み層
 
 #[filter_height , filter_width , in_channels, output_channels]
+# 5x5フィルタで32チャネルを出力（入力は白黒画像なので1チャンネル）
 W_conv1 = weight_variable([5,5,1,32])
-
+# 畳み込み層のバイアス
 b_conv1 = bias_variable([32])
 # 画像をリシェイプ 第2引数は画像数(-1は元サイズを保存するように自動計算)、縦x横、チャネル
 x_image = tf.reshape(x, [-1,512,600,1])
 h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) )
+
+### 2層目 プーリング層
+# 2x2のマックスプーリング層を構築
 h_pool1 = max_pool_2x2(h_conv1)
 
-#2nd layer
+### 3層目 畳み込み層
 W_conv2 = weight_variable([5,5,32,32])
 b_conv2 = bias_variable([32])
 h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2)+b_conv2 )
+
+### 4層目 プーリング層
 h_pool2 = max_pool_2x2(h_conv2)
 
 ### 5層目 全結合層
@@ -76,7 +82,7 @@ h_pool2 = max_pool_2x2(h_conv2)
 # プーリングでのみ画像サイズが変わる。2x2プーリングで2x2でストライドも2x2なので
 # 縦横ともに各層で半減する。そのため、600or512 / 2 / 2 = 150or128が現在の画像サイズ
 # 全結合層にするために、1階テンソルに変形。画像サイズ縦と画像サイズ横とチャネル数の積の次元
-# 出力は1024（この辺は決めです）　あとはSoftmax Regressionと同じ
+# 出力は1024（この辺は決めです）　
 W_fc1 = weight_variable([150*128*32,1024*2])
 b_fc1 = bias_variable([1024*2])
 
@@ -104,7 +110,7 @@ with tf.name_scope("difference") as scope:
 with tf.name_scope("train") as scope:
 	train_step = tf.train.GradientDescentOptimizer(0.5).minimize(difference)
 #correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
-#accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32)): meanは値が微妙なので却下.誤差を512*600で割ってる？
+#accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32)): meanは値が微妙なので却下.誤差を308*308で割ってる？
 
 
 
