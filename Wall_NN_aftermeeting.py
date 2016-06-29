@@ -50,8 +50,8 @@ def max_pool_4x128(x):
     return tf.nn.max_pool(x, ksize=[1, 4, 1, 1],strides=[1, 4, 1, 1], padding='VALID')
 
 #グラフを生成
-x  = tf.placeholder(tf.float32, shape=[None, 256*300],name = "input")
-y_ = tf.placeholder(tf.float32, shape=[None, 256*300], name = "And")
+x  = tf.placeholder(tf.float32, shape=[256*300],name = "input")
+y_ = tf.placeholder(tf.float32, shape=[256*300], name = "And")
 
 sess= tf.InteractiveSession()
 
@@ -131,10 +131,10 @@ print "NetWorkMaking Fin"
 #実際の計算　一個ずつファイルを読んでいくことにする
 st = time.time()
 
-for i in range(2):
+for i in range(100000):
 	cost = 0
 	summary_str= 0
-	for k in range(2):
+	for k in range(1000):
 	#if i%2 == 0:
 		#img read(A)
 		img = cv2.imread("half_ans/"+Ansfiles[k])
@@ -143,7 +143,6 @@ for i in range(2):
 		train_label_array = img.flatten().astype(np.float32)/255.0
 		#train_label_array.append(img)
 		
-		print "before if readfile: half_img/"+Ansfiles[k]
 		#img read(T)
 		if  os.path.isfile("half_img/"+Ansfiles[k]):#because Ansfiles are default images(not ans image)
 			def_img = cv2.imread("half_img/"+Ansfiles[k])
@@ -151,17 +150,13 @@ for i in range(2):
 			#change to 1 line 
 			train_array = def_img.flatten().astype(np.float32)/255.0
 			#train_array.append(def_img)
-			print "passed if"
 		else:
-			print "else"
 			continue
 
 		# change to numpy array
 		train_image = np.asarray(train_array)
 		train_label = np.asarray(train_label_array)
 		
-		print train_image.shape 
-		print train_label.shape
 
 		#data input in NN
 		feed = {x:train_image, y_: train_label, keep_prob: 1.0}
@@ -169,14 +164,14 @@ for i in range(2):
 		result=sess.run([merged, difference], feed_dict=feed)
 		#summary_str+= result[0]
 		cost += result[1]
+		
+		print str(k) +u":"+str(result[1])
 
-		print result[0]
-		print result[1]
-		if k == 1:
-			print "***short step time %f [s]" % (time.time() - st)
-			train_step.run(feed_dict={x: train_image, y_: train_label, keep_prob: 1.0})
+		
+		print "***short step time %f [s]" % (time.time() - st)
+		train_step.run(feed_dict={x: train_image, y_: train_label, keep_prob: 1.0})
 
-	#writer.add_summary(summary_str,i)
+	#writer.add_summary(i,difference)
 	print("difference at step %s : %s"%(i,cost))
 	print "***elapsed time %f [s]" % (time.time() - st)
 #print("test accuracy %g"%difference.eval(feed_dict={x:train_image, y_: train_label, keep_prob: 1.0}))
