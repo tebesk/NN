@@ -171,7 +171,7 @@ for i in range(100000):
 		print "***short step time %f [s]" % (time.time() - st)
 		train_step.run(feed_dict={x: train_image, y_: train_label, keep_prob: 1.0})
 
-	#writer.add_summary(i,difference)
+	writer.add_summary(i,difference)
 	print("difference at step %s : %s"%(i,cost))
 	print "***elapsed time %f [s]" % (time.time() - st)
 #print("test accuracy %g"%difference.eval(feed_dict={x:train_image, y_: train_label, keep_prob: 1.0}))
