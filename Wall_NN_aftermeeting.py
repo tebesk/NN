@@ -4,7 +4,8 @@ import os
 import numpy as np
 import cv2
 import time
-from matplotlib import pyplot as plt
+
+#import input_data
 
 # training data
 train_array = []
@@ -14,12 +15,11 @@ train_label_array = []
 train_label = []
 
 ### Read answer image
-Ansfiles = os.listdir('half_ans')
-Ansfiles.sort()
+Ansfiles = os.listdir('ans')
 
-### Read input image
-#Testfiles = os.listdir('half_img')
-#Testfiles.sort()
+
+
+
 
 
 #####################################################net
@@ -50,8 +50,8 @@ def max_pool_4x128(x):
     return tf.nn.max_pool(x, ksize=[1, 4, 1, 1],strides=[1, 4, 1, 1], padding='VALID')
 
 #グラフを生成
-x  = tf.placeholder(tf.float32, shape=[256*300],name = "input")
-y_ = tf.placeholder(tf.float32, shape=[256*300], name = "And")
+x  = tf.placeholder(tf.float32, [None,256*300], name = "input")
+y_ = tf.placeholder(tf.float32, [None,256*300], name = "And")
 
 sess= tf.InteractiveSession()
 
@@ -112,8 +112,8 @@ print "befor tf.name_scope"
 #Train and Evaluate the Model
 with tf.name_scope("difference") as scope:
 	difference  = tf.reduce_sum(tf.square(y_ - y_conv))
-	#クロスエントロピーを出力
-	ce_summ = tf.scalar_summary("difference", difference)
+	#誤差
+	tf.scalar_summary("difference", difference)
 	
 	print "befor scope train"
 with tf.name_scope("train") as scope:
@@ -131,53 +131,52 @@ print "NetWorkMaking Fin"
 #実際の計算　一個ずつファイルを読んでいくことにする
 st = time.time()
 
-for i in range(100000):
-	cost = 0
-	summary_str= 0
-	for k in range(1000):
-	#if i%2 == 0:
-		#img read(A)
-		img = cv2.imread("half_ans/"+Ansfiles[k])
-		img = cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
-		#change to 1 line 
-		train_label_array = img.flatten().astype(np.float32)/255.0
-		#train_label_array.append(img)
-		
-		#img read(T)
-		if  os.path.isfile("half_img/"+Ansfiles[k]):#because Ansfiles are default images(not ans image)
-			def_img = cv2.imread("half_img/"+Ansfiles[k])
-			def_img = cv2.cvtColor(def_img, cv2.COLOR_RGB2GRAY)
-			#change to 1 line 
-			train_array = def_img.flatten().astype(np.float32)/255.0
-			#train_array.append(def_img)
-		else:
-			continue
+#画像の総数
+for k in range(1):
+	#img read(A)
+	img = cv2.imread("ans/"+Ansfiles[k])
+	img = cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
+				 
+	#img read(T)
+	if  os.path.isfile("train/"+Ansfiles[k]):#because Ansfiles are default images(not ans image)
+		def_img = cv2.imread("train/"+Ansfiles[k])
+		def_img = cv2.cvtColor(def_img, cv2.COLOR_RGB2GRAY)			
 
-		# change to numpy array
-		train_image = np.asarray(train_array)
-		train_label = np.asarray(train_label_array)
-		
+		#we put all image in train array
+		train_label_array.append(img.flatten().astype(np.float32)/255.0)
+		train_array.append(def_img.flatten().astype(np.float32)/255.0)
+	else:
+		print Ansfiles[k]
+		continue
 
-		#data input in NN
-		feed = {x:train_image, y_: train_label, keep_prob: 1.0}
-		#calculate 
-		result=sess.run([merged, difference], feed_dict=feed)
-		#summary_str+= result[0]
-		cost += result[1]
-		
-		print str(k) +u":"+str(result[1])
+# change to numpy array
+train_image = np.asarray(train_array)
+train_label = np.asarray(train_label_array)
+print train_image.shape
+print train_label.shape
 
-		
-		print "***short step time %f [s]" % (time.time() - st)
-		train_step.run(feed_dict={x: train_image, y_: train_label, keep_prob: 1.0})
+print train_image
+#data input in NN
+feed = {x:train_image, y_: train_label, keep_prob: 1.0}
 
-	writer.add_summary(i,difference)
-	print("difference at step %s : %s"%(i,cost))
+
+# for training
+for i in range(2):
+						
+	##本当の学習
+	#sess.run(train_step, feed_dict = feed)
+	train_step.run(feed_dict={x:train_image, y_: train_label, keep_prob: 1.0})	
+	#Fetchに２つ指定
+	#result=sess.run([merged,difference], feed_dict={x:train_image, y_: train_label})
+	#result=sess.run([merged,difference])
+	result=sess.run(difference, feed_dict={x:train_image, y_: train_label})
+	#write Tensorboard
+#	writer.add_summary(result[0],i)# show merged
+	
+#	print("Cost at step %s : %s"%(i,result[1]))#show difference
 	print "***elapsed time %f [s]" % (time.time() - st)
-#print("test accuracy %g"%difference.eval(feed_dict={x:train_image, y_: train_label, keep_prob: 1.0}))
 
 #結果の保存
 saver = tf.train.Saver()
-save_path= saver.save(sess,"/home/terumo/py/model.ckpt")
+save_path= saver.save(sess,"/home/ys/Undeux/model.ckpt")
 print("model saved")
-
