@@ -21,7 +21,10 @@ sess= tf.InteractiveSession()
 
 
 
-
+IMAGE_WIDTH = 300
+IMAGE_HEIGHT = 256
+IMAGE_PIXELS = IMAGE_WIDTH*IMAGE_HEIGHT
+NUM_CLASSES = IMAGE_WIDTH*IMAGE_HEIGHT
 
 #####################################################net
 # 重みを標準偏差0.1の正規分布で初期化
@@ -51,8 +54,8 @@ def max_pool_4x128(x):
     return tf.nn.max_pool(x, ksize=[1, 4, 1, 1],strides=[1, 4, 1, 1], padding='VALID')
 
 #グラフを生成
-x  = tf.placeholder(tf.float32, [None,256*300], name = "input")
-y_ = tf.placeholder(tf.float32, [None,256*300], name = "And")
+x  = tf.placeholder(tf.float32, [None,IMAGE_PIXELS], name = "input")
+y_ = tf.placeholder(tf.float32, [None,IMAGE_PIXELS], name = "And")
 
 
 
@@ -63,27 +66,30 @@ print "before 1st layer"
 #and the last is the number of output channels. 
 #[filter_height , filter_width , in_channels, output_channels]
 # 5x5フィルタで32チャネルを出力（入力は白黒画像なので1チャンネル）
-W_conv1 = weight_variable([5,5,1,32])
-# 畳み込み層のバイアス
-b_conv1 = bias_variable([32])
 
 # 画像をリシェイプ 第2引数は画像数(-1は元サイズを保存するように自動計算)、縦x横、チャネル
 x_image = tf.reshape(x, [-1,256,300,1])
-h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
+
+with tf.name_scope('conv1') as scope:
+	W_conv1 = weight_variable([5, 5, 1, 32])
+	b_conv1 = bias_variable([32])
+	h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
 
 print "before 2nd layer"
 ### 2層目 プーリング層
 # 2x2のマックスプーリング層を構築
-h_pool1 = max_pool_2x2(h_conv1)
+with tf.name_scope('pool1') as scope:
+	h_pool1 = max_pool_2x2(h_conv1)
 
 ### 3層目 畳み込み層
-W_conv2 = weight_variable([5,5,32,32])
-b_conv2 = bias_variable([32])
-
-h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2)+b_conv2 )
+with tf.name_scope('conv2') as scope:
+	W_conv2 = weight_variable([5, 5, 32, 32])
+	b_conv2 = bias_variable([32])
+	h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 
 ### 4層目 プーリング層
-h_pool2 = max_pool_2x2(h_conv2)
+with tf.name_scope('pool2') as scope:
+	h_pool2 = max_pool_2x2(h_conv2)
 
 print "before 5th layer"
 ### 5層目 全結合層
@@ -92,25 +98,23 @@ print "before 5th layer"
 # 縦横ともに各層で半減する。そのため、300or256 / 2 / 2 = 75or64が現在の画像サイズ
 # 全結合層にするために、1階テンソルに変形。画像サイズ縦と画像サイズ横とチャネル数の積の次元
 # 出力は1024（この辺は決めです）　
-W_fc1 = weight_variable([75*64*32,1024])
-b_fc1 = bias_variable([1024])
-
-h_pool2_flat = tf.reshape(h_pool2,[-1,75*64*32])
-h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
-
-print "befor dropout"
-
-#Dropout
-#dropout率を入れるための仮のTensor
-keep_prob = tf.placeholder(tf.float32)
-h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+with tf.name_scope('fc1') as scope:
+	W_fc1 = weight_variable([75*64*32, 1024])
+	b_fc1 = bias_variable([1024])
+	h_pool2_flat = tf.reshape(h_pool2, [-1, 75*64*32])
+	h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+	#Dropout
+	keep_prob = tf.placeholder(tf.float32)
+	h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
 print "befor readout"
 #Readout Layer
-W_fc2 = weight_variable([1024,256*300])
-b_fc2 = bias_variable([256*300])
-
-y_conv =tf.sigmoid(tf.matmul(h_fc1_drop, W_fc2)+b_fc2)
+with tf.name_scope('fc2') as scope:
+	W_fc2 = weight_variable([1024, NUM_CLASSES])
+	b_fc2 = bias_variable([NUM_CLASSES])
+	
+with tf.name_scope('sigmoid') as scope:
+	y_conv =tf.sigmoid(tf.matmul(h_fc1_drop, W_fc2)+b_fc2)
 
 #Train and Evaluate the Model############################################################
 
@@ -167,16 +171,16 @@ print train_label.shape
 
 
 # Let's train 
-for i in range(3):
+for i in range(2):
 	
-	for k in range(100):
-		raw_data = train_image[5*k:5*k+5,:]
-		ans_data = train_label[5*k:5*k+5,:]
+	for k in range(50):
+		raw_data = train_image[30*k:30*k+30,:]
+		ans_data = train_label[30*k:30*k+30,:]
 		#print raw_data.shape
 		#print ans_data.shape
 		##本当の学習
 		train_step.run(feed_dict={x:raw_data, y_: ans_data, keep_prob: 0.1})
-		if k==99:
+		if k==49:
 			##Evaluating Our Model
 			train_accuracy = accuracy.eval({x:raw_data, y_: ans_data, keep_prob: 0.1})
 			summary_str= sess.run(merged, feed_dict={x:raw_data, y_: ans_data, keep_prob: 0.1})
