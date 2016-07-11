@@ -114,22 +114,6 @@ y_conv =tf.sigmoid(tf.matmul(h_fc1_drop, W_fc2)+b_fc2)
 
 #Train and Evaluate the Model############################################################
 
-##minst では以下の方式で行っている
-##cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
-##train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
-#with tf.name_scope("difference") as scope:
-#	difference  = tf.reduce_sum(tf.square(y_ - y_conv))
-#	#誤差
-#	tf.scalar_summary("difference", difference)
-#	
-#	print "befor scope train"
-#with tf.name_scope("train") as scope:
-#	train_step = tf.train.GradientDescentOptimizer(0.5).minimize(difference)
-#correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
-#accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32)): meanは値が微妙なので却下.誤差を512*600で割ってる？
-
-
-
 # 評価系の関数を用意
 cross_entropy = -tf.reduce_sum(tf.square(y_ - y_conv))#-tf.reduce_sum(y_*tf.log(y_conv))←うまく行かず
 train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
