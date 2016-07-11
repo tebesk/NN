@@ -105,7 +105,7 @@ saver = tf.train.Saver()
 sess.run(tf.initialize_all_variables())
 saver.restore(sess, "model.ckpt")
 
-for i in range(len(test_image)):
-	pred = tf.sigmoid(logits.eval(feed_dict={x: [test_image[i]],keep_prob: 1.0 })[0])
+for i in range(len(train_image)):
+	pred = tf.sigmoid(logits.eval(feed_dict={images_placeholder: [train_image[i]],keep_prob: 1.0 })[0])
 	print pred#とりあえず出力
 
