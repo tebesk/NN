@@ -120,7 +120,6 @@ for k in range(1):
 	tf_floordiv=tf.floordiv(pred, divide)
 	print "tf.floordiv"
 	print tf_floordiv
-
 	
 	ansimage = np.asarray(tf_floordiv.eval())
 	print ansimage
